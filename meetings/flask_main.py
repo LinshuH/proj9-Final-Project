@@ -31,7 +31,7 @@ else:
 
 app = flask.Flask(__name__)
 app.debug=CONFIG.DEBUG
-app.logger.setLevel(logging.DEBUG)
+app.logger.setLevel(logging.INFO) ##Used to be .DEBUG
 app.secret_key=CONFIG.SECRET_KEY
 
 SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
@@ -66,7 +66,18 @@ def choose():
 
     gcal_service = get_gcal_service(credentials)
     app.logger.debug("Returned from get_gcal_service")
+    #This is the things that I return to the html
+
+    #logging.info("---------This is g.calendars:")
     flask.g.calendars = list_calendars(gcal_service)
+    logging.info("pass the calendars")
+    #logging.info(flask.g.calendars)
+    
+    #logging.info("---------This is g.events:")
+    flask.g.events = list_events(gcal_service,"primary")
+    logging.info("pass the events")
+    #logging.info(flask.g.events)
+    
     return render_template('index.html')
 
 ####
@@ -186,10 +197,12 @@ def oauth2callback():
 #####
 
 @app.route('/setrange', methods=['POST'])
-def setrange():
+def setrange(): #get the input date
     """
     User chose a date range with the bootstrap daterange
     widget.
+    # This function is used to get the inpute date, time from user. These data are use later to determine what kind of information need to be adding into flask.return
+    
     """
     app.logger.debug("Entering setrange")  
     flask.flash("Setrange gave us '{}'".format(
@@ -199,9 +212,14 @@ def setrange():
     daterange_parts = daterange.split()
     flask.session['begin_date'] = interpret_date(daterange_parts[0])
     flask.session['end_date'] = interpret_date(daterange_parts[2])
+    # add the begin and end time:
+    flask.session['begin_time'] = request.form.get('begin_time')
+    flask.session['end_time'] = request.form.get('end_time')
+    logging.info("Get begin_time {}, get end_time: {}".format(flask.session['begin_time'], flask.session['end_time']))
     app.logger.debug("Setrange parsed {} - {}  dates as {} - {}".format(
       daterange_parts[0], daterange_parts[1], 
       flask.session['begin_date'], flask.session['end_date']))
+      
     return flask.redirect(flask.url_for("choose"))
 
 ####
@@ -214,6 +232,9 @@ def init_session_values():
     """
     Start with some reasonable defaults for date and time ranges.
     Note this must be run in app context ... can't call from main. 
+    # Initiate the value of the the key. 
+    # These value are make by the server rather than ask from html. 
+    # The values are redefined on the /setrange function
     """
     # Default date span = tomorrow to 1 week from now
     now = arrow.now('local')     # We really should be using tz from browser
@@ -224,7 +245,7 @@ def init_session_values():
     flask.session["daterange"] = "{} - {}".format(
         tomorrow.format("MM/DD/YYYY"),
         nextweek.format("MM/DD/YYYY"))
-    # Default time span each day, 8 to 5
+    # Default time span each day, 9 to 5
     flask.session["begin_time"] = interpret_time("9am")
     flask.session["end_time"] = interpret_time("5pm")
 
@@ -239,7 +260,7 @@ def interpret_time( text ):
     time_formats = ["ha", "h:mma",  "h:mm a", "H:mm"]
     try: 
         as_arrow = arrow.get(text, time_formats).replace(tzinfo=tz.tzlocal())
-        as_arrow = as_arrow.replace(year=2016) #HACK see below
+        as_arrow = as_arrow.replace(year=2017) #HACK see below
         app.logger.debug("Succeeded interpreting time")
     except:
         app.logger.debug("Failed to interpret time")
@@ -291,6 +312,12 @@ def list_calendars(service):
     The returned list is sorted to have
     the primary calendar first, and selected (that is, displayed in
     Google Calendars web app) calendars before unselected calendars.
+    
+    # This function check the calendars inside this google calendar account
+    # summary: title of the calendar
+    # id: Identifier of the calendar
+    # details description: https://developers.google.com/google-apps/calendar/v3/reference/calendarList
+
     """
     app.logger.debug("Entering list_calendars")  
     calendar_list = service.calendarList().list().execute()["items"]
@@ -305,17 +332,51 @@ def list_calendars(service):
         summary = cal["summary"]
         # Optional binary attributes with False as default
         selected = ("selected" in cal) and cal["selected"]
-        primary = ("primary" in cal) and cal["primary"]
-        
+        primary = ("primary" in cal) and cal["primary"]        
 
         result.append(
           { "kind": kind,
             "id": id,
             "summary": summary,
             "selected": selected,
-            "primary": primary
+            "primary": primary,
+            "description": desc
             })
     return sorted(result, key=cal_sort_key)
+
+def list_events(service,calender):
+	"""
+	Based on the calendar, return a list of events, events are all the events inside that calendar. 
+	Each event is represented by a dict.
+	"""
+	app.logger.debug("Entering list_events")
+	event_list = service.events().list(calendarId=calender).execute()["items"]
+	logging.info("------Reach list_events")
+	result = [ ]
+	for eve in event_list:
+		if "transparency" in eve:
+			continue
+		else:
+			kind = eve["kind"]
+			id = eve["id"]
+			start = eve["start"]["dateTime"]
+			end = eve["end"]["dateTime"]
+			if "description" in eve:
+				desc = eve["description"]
+			else:
+				desc = "(no description)"
+			
+			result.append(
+			  { "kind": kind,
+			  	"id": id,
+			  	"start": start,
+			  	"end": end,
+			  	"description": desc
+			  	})
+	#events.sord(key=lambda e: e['
+	logging.info(result)
+	return result    	  	
+  
 
 
 def cal_sort_key( cal ):
