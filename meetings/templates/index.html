@@ -98,10 +98,10 @@
 {% if g.calendars is defined  %}
   <div class="row">
   {% for cal in g.calendars if cal.selected %}
-          <div class="col-md-4">
-	   {{ cal.id }}
-     {{ cal.kind }}
-          </div>
+      <div class="col-md-4">
+        <input type="checkbox" name="{{ cal.summary }}" id="{{ cal.summary }}" name="{{ cal.summary }}" value="{{ cal.summary }}">
+      	   {{ cal.id }}
+      </div>
          {% if loop.index is divisibleby 3 %}
           </div> <div class="row">
          {% endif %}

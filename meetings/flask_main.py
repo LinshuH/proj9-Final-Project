@@ -73,12 +73,20 @@ def choose():
     logging.info("pass the calendars")
     #logging.info(flask.g.calendars)
     
-    #logging.info("---------This is g.events:")
-    flask.g.events = list_events(gcal_service,"primary")
-    logging.info("pass the events")
-    #logging.info(flask.g.events)
+    logging.info("---------This is g.events:")
+    flask.g.events = list_events(gcal_service,"echooogo@gmail.com")
+    #logging.info("pass the events")
+    logging.info(flask.g.events)
     
     return render_template('index.html')
+"""
+
+@app.template_filter('select_calendars')
+def add_select_calender (calendarId):
+
+	if the checkbox is clicked, then add the id into the list
+	
+"""
 
 ####
 #
@@ -342,16 +350,18 @@ def list_calendars(service):
             "primary": primary,
             "description": desc
             })
+    logging.info("-----------Reach calender: ")
+    logging.info(result)
     return sorted(result, key=cal_sort_key)
 
-def list_events(service,calender):
+def list_events(service,calendar):
 	"""
 	Based on the calendar, return a list of events, events are all the events inside that calendar. 
 	Each event is represented by a dict.
 	"""
 	app.logger.debug("Entering list_events")
-	event_list = service.events().list(calendarId=calender).execute()["items"]
-	logging.info("------Reach list_events")
+	event_list = service.events().list(calendarId=calendar).execute()["items"]
+	#logging.info("------Reach list_events")
 	result = [ ]
 	for eve in event_list:
 		if "transparency" in eve:
@@ -373,8 +383,7 @@ def list_events(service,calender):
 			  	"end": end,
 			  	"description": desc
 			  	})
-	#events.sord(key=lambda e: e['
-	logging.info(result)
+	#logging.info(result)
 	return result    	  	
   
 
