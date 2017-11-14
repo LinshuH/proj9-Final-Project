@@ -94,13 +94,15 @@
     shown in each row (but the order is across then down; I would
     prefer down then across). 
     -->
+
 <h4>This is calendars</h4>
+<form>
 {% if g.calendars is defined  %}
   <div class="row">
   {% for cal in g.calendars if cal.selected %}
       <div class="col-md-4">
-        <input type="checkbox" name="{{ cal.summary }}" id="{{ cal.summary }}" name="{{ cal.summary }}" value="{{ cal.summary }}">
-      	   {{ cal.id }}
+        <input type="checkbox" name="summary" id="{{ cal.summary }}" value="{{ cal.id }}">
+      	   {{ cal.summary }}
       </div>
          {% if loop.index is divisibleby 3 %}
           </div> <div class="row">
@@ -108,12 +110,13 @@
   {% endfor %}
   </div>
 {% endif %}
+<input type="submit" value="Select Calendars" name="calendars_button" id="calendars_button"/>
+</form>
 
 <h4>This is events</h4>
 {% if g.events is defined  %}
   <div class="row">
-  {% for event in g.events %}
-      {% for eve in event %}
+  {% for eve in g.events %}
           <div class="col-md-4">
            Start at:
            {{ eve.start }}
@@ -122,7 +125,6 @@
            Description: 
            {{ eve.description}}
           </div>
-      {% endfor %}
   {% endfor %}
   </div>
 {% endif %}   

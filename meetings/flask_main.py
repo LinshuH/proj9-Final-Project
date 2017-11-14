@@ -71,22 +71,19 @@ def choose():
     #logging.info("---------This is g.calendars:")
     flask.g.calendars = list_calendars(gcal_service)
     logging.info("pass the calendars")
-    #logging.info(flask.g.calendars)
+    #logging.info(flask.g.calendars) 
     
-    logging.info("---------This is g.events:")
-    flask.g.events = list_events(gcal_service,"echooogo@gmail.com")
-    #logging.info("pass the events")
-    logging.info(flask.g.events)
+    
+    cal_ids = flask.request.form.getlist("summary")
+    logging.info("---------this is cal_ids: ")
+    logging.info(cal_ids)
+    #cal_ids = choose_calendar()
+    #events = []
+    for cal_id in cal_ids:
+    	flask.g.events = list_events(gcal_service,cal_id)
     
     return render_template('index.html')
-"""
-
-@app.template_filter('select_calendars')
-def add_select_calender (calendarId):
-
-	if the checkbox is clicked, then add the id into the list
-	
-"""
+	#I used want to combine _choose_cal function with /choose, but server does not allow to do so. Need to try in future.
 
 ####
 #
