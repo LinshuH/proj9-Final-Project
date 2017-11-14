@@ -44,6 +44,9 @@ APPLICATION_NAME = 'MeetMe class project'
 #
 #############################
 
+
+
+
 @app.route("/")
 @app.route("/index")
 def index():
@@ -74,14 +77,14 @@ def choose():
     #logging.info(flask.g.calendars) 
     
     
-    cal_ids = flask.request.form.getlist("summary")
-    logging.info("---------this is cal_ids: ")
-    logging.info(cal_ids)
+    #cal_ids = flask.request.form.getlist("summary")
+    #logging.info("---------this is cal_ids: ")
+    #logging.info(cal_ids)
     #cal_ids = choose_calendar()
-    #events = []
+    events = []
     for cal_id in cal_ids:
-    	flask.g.events = list_events(gcal_service,cal_id)
-    
+    	events.append(list_events(gcal_service,cal_id))
+    flask.g.events = events
     return render_template('index.html')
 	#I used want to combine _choose_cal function with /choose, but server does not allow to do so. Need to try in future.
 
@@ -226,6 +229,19 @@ def setrange(): #get the input date
       flask.session['begin_date'], flask.session['end_date']))
       
     return flask.redirect(flask.url_for("choose"))
+
+cal_ids = []
+@app.route('/_select_calendar', methods=['POST'])
+def select_cal():
+    """
+    get the id of the calendars that user choose
+    """
+    global cal_ids
+    cal_ids = request.form.getlist('summary')
+    logging.info("---------------- Get cal_ids: ")
+    logging.info(cal_ids)
+    return flask.redirect(flask.url_for("choose"))
+
 
 ####
 #
