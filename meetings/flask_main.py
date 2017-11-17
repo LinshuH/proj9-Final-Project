@@ -74,7 +74,6 @@ def choose():
 
     logging.info("---------This is g.calendars:")
     flask.g.calendars = list_calendars(gcal_service)
-    #logging.info("pass the calendars")
     logging.info(flask.g.calendars) 
     
     
@@ -90,12 +89,7 @@ def choose():
     #The event been selected by the date and time:
     #Get the date and time
     begin_datetime = flask.session['begin_datetime']
-    #logging.info("-----------This is begin_datetime: ")
-    #logging.info(begin_datetime)
     end_datetime = flask.session['end_datetime']
-    #logging.info("-----------This is end_datetime: ")
-    #logging.info(end_datetime)
-
     
     #Function to do the filter:
     filtered_event = date_time_filter(events,begin_datetime,end_datetime)
@@ -239,21 +233,14 @@ def setrange(): #get the input date
     daterange = request.form.get('daterange')
     flask.session['daterange'] = daterange
     daterange_parts = daterange.split()
-    #logging.info("--------------------------This is daterange_parts------------------")
-    #logging.info(daterange_parts) #INFO:['11/17/2017', '-', '11/23/2017']
     
     # add the time to the begin_date and end_date: 
     flask.session['begin_time'] = request.form.get('begin_time')
     flask.session['end_time'] = request.form.get('end_time')
 
     flask.session['begin_datetime'] = interpret_date(daterange_parts[0]+" "+flask.session['begin_time']) 
-    #They are string in arrow isoformat, date is correct, 
-    #logging.info("--------------This is flask.session['begin_datetime']------------")
-    #logging.info(flask.session['begin_datetime'])
     
     flask.session['end_datetime'] = interpret_date(daterange_parts[2]+" "+flask.session['end_time'])
-    #logging.info("--------------This is flask.session['end_datetime']------------")
-    #logging.info(flask.session['end_datetime'])
     
     logging.info("Get begin_time {}, get end_time: {}".format(flask.session['begin_time'], flask.session['end_time']))
     app.logger.debug("Setrange parsed {} - {}  dates as {} - {}".format(
@@ -429,33 +416,14 @@ def date_time_filter(events,begin_datetime,end_datetime):
 	ibegin = arrow.get(begin_datetime)
 	iend = arrow.get(end_datetime)
 	result = []
-	logging.info("----------This is ibegin: ")
-	logging.info(ibegin)
-	logging.info("----------This is iend: ")
-	logging.info(iend)
-	
-	"""
-	logging.info("----------This is comparison: ")
-	if (input_begin_datetime <= input_end_datetime):
-		logging.info("YY")  #YY
-	else:
-		logging.info("XX")
-	"""
-	#input_begin_time = arrow.get(begin_time).time()
-	#input_end_time = arrow.get(end_time).time()
-	
-	logging.info("----------This is events BEFORE: --------")
-	logging.info(events)
 	
 	for eve in events:
 		#Turn the event's date and time to arrow object
 		ebegin = arrow.get(eve["start"])
-		#eve_begin_date = arrow.get(str_eve_begin).date()
-		#eve_begin_time = arrow.get(str_eve_begin).time()
-		#logging.info("----------This is eve_begin_datetime: ")
-		#logging.info(eve_begin_datetime)
-		
 		eend = arrow.get(eve["end"])
+		
+		logging.info("----------This is events: ")
+		logging.info(events)
 		
 		#event date is inside the defined range
 		if (ebegin.date()>= ibegin.date() and eend.date()<=iend.date()):
@@ -478,6 +446,10 @@ def date_time_filter(events,begin_datetime,end_datetime):
 			# Start time in the input start and end range
 			if (ibegin.time()<=ebegin.time()<iend.time()):
 				result.append(eve)
+				
+	logging.info("----------This is events after filter: ")
+	logging.info(result)
+	
 	return result
   
 
