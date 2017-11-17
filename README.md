@@ -1,4 +1,4 @@
-# proj7-Free times
+# proj8-Free times
 Snarf appointment data from a selection of a user's Google calendars 
 
 ## Author
