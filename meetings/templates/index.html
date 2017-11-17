@@ -96,10 +96,10 @@
     -->
 
 <h4>This is calendars</h4>
-<form id="select" action="/_select_calendar" method="post">
+<form action="/_select_calendar" method="post">
 {% if g.calendars is defined  %}
   <div class="row">
-  {% for cal in g.calendars if cal.selected %}
+  {% for cal in g.calendars %}
       <div class="col-md-4">
         <input type="checkbox" name="summary" id="{{ cal.summary }}" value="{{ cal.id }}">
       	   {{ cal.summary }}
@@ -107,21 +107,21 @@
   {% endfor %}
   </div>
 {% endif %}
-<input type="submit" value="Select Calendars" name="calendars_button" id="calendars_button"/>
+<input type="submit" value="Select Calendars" />
 </form>
 
-<h4>This is events</h4>
+<h4>This is busy time</h4>
 {% if g.events is defined  %}
   <div class="row">
   {% for eve in g.events %}
-          <div class="col-md-4">
-           Start at:
-           {{ eve.start }}
-           End at: 
-           {{ eve.end }}
-           Description: 
-           {{ eve.description}}
-          </div>
+      <div class="col-md-4">
+        <!--Next step: Find how to print the class name on the page. -->
+       <h6>Event<h6>
+       <li>Event title: {{ eve.summary }}</li>
+       <li>Start at: {{ eve.start }}</li>
+       <li>End at: {{ eve.end }}</li>
+
+       </div>
   {% endfor %}
   </div>
 {% endif %}   

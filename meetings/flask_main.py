@@ -61,6 +61,7 @@ def choose():
     ## I wanted to put what follows into a function, but had
     ## to pull it back here because the redirect has to be a
     ## 'return' 
+
     app.logger.debug("Checking credentials for Google calendar access")
     credentials = valid_credentials()
     if not credentials:
@@ -71,23 +72,43 @@ def choose():
     app.logger.debug("Returned from get_gcal_service")
     #This is the things that I return to the html
 
-    #logging.info("---------This is g.calendars:")
+    logging.info("---------This is g.calendars:")
     flask.g.calendars = list_calendars(gcal_service)
-    logging.info("pass the calendars")
-    #logging.info(flask.g.calendars) 
+    #logging.info("pass the calendars")
+    logging.info(flask.g.calendars) 
     
     
-    #cal_ids = flask.request.form.getlist("summary")
-    #logging.info("---------this is cal_ids: ")
-    #logging.info(cal_ids)
-    #cal_ids = choose_calendar()
-    events = []
+    logging.info("------------Choose Get cal_ids: ---------")
+    logging.info(cal_ids)
+    events = []  # events is an array that contains the event.
+    temp = []
     for cal_id in cal_ids:
-    	events.append(list_events(gcal_service,cal_id))
-    flask.g.events = events
-    return render_template('index.html')
-	#I used want to combine _choose_cal function with /choose, but server does not allow to do so. Need to try in future.
+    	temp = list_events(gcal_service,cal_id)
+    	events += temp
+    	temp = []
+    #The event is finish the calendar fielt at here
+    #The event been selected by the date and time:
+    #Get the date and time
+    begin_datetime = flask.session['begin_datetime']
+    #logging.info("-----------This is begin_datetime: ")
+    #logging.info(begin_datetime)
+    end_datetime = flask.session['end_datetime']
+    #logging.info("-----------This is end_datetime: ")
+    #logging.info(end_datetime)
 
+    
+    #Function to do the filter:
+    filtered_event = date_time_filter(events,begin_datetime,end_datetime)
+	
+	
+    flask.g.events = filtered_event
+    logging.info("--------------This is the g.events")
+    logging.info(flask.g.events)
+    return render_template('index.html')
+    ##Q: I used want to combine _choose_cal function with /choose, but server does not allow to do so. Why? 
+    ##   Why the event cannot directly call the choose?
+    
+    
 ####
 #
 #  Google calendar authorization:
@@ -218,11 +239,22 @@ def setrange(): #get the input date
     daterange = request.form.get('daterange')
     flask.session['daterange'] = daterange
     daterange_parts = daterange.split()
-    flask.session['begin_date'] = interpret_date(daterange_parts[0])
-    flask.session['end_date'] = interpret_date(daterange_parts[2])
-    # add the begin and end time:
+    #logging.info("--------------------------This is daterange_parts------------------")
+    #logging.info(daterange_parts) #INFO:['11/17/2017', '-', '11/23/2017']
+    
+    # add the time to the begin_date and end_date: 
     flask.session['begin_time'] = request.form.get('begin_time')
     flask.session['end_time'] = request.form.get('end_time')
+
+    flask.session['begin_datetime'] = interpret_date(daterange_parts[0]+" "+flask.session['begin_time']) 
+    #They are string in arrow isoformat, date is correct, 
+    #logging.info("--------------This is flask.session['begin_datetime']------------")
+    #logging.info(flask.session['begin_datetime'])
+    
+    flask.session['end_datetime'] = interpret_date(daterange_parts[2]+" "+flask.session['end_time'])
+    #logging.info("--------------This is flask.session['end_datetime']------------")
+    #logging.info(flask.session['end_datetime'])
+    
     logging.info("Get begin_time {}, get end_time: {}".format(flask.session['begin_time'], flask.session['end_time']))
     app.logger.debug("Setrange parsed {} - {}  dates as {} - {}".format(
       daterange_parts[0], daterange_parts[1], 
@@ -230,16 +262,15 @@ def setrange(): #get the input date
       
     return flask.redirect(flask.url_for("choose"))
 
+
 cal_ids = []
 @app.route('/_select_calendar', methods=['POST'])
 def select_cal():
     """
-    get the id of the calendars that user choose
+    get the id of the calendars that user choose from checkbox
     """
     global cal_ids
     cal_ids = request.form.getlist('summary')
-    logging.info("---------------- Get cal_ids: ")
-    logging.info(cal_ids)
     return flask.redirect(flask.url_for("choose"))
 
 
@@ -306,7 +337,7 @@ def interpret_date( text ):
     with the local time zone.
     """
     try:
-      as_arrow = arrow.get(text, "MM/DD/YYYY").replace(
+      as_arrow = arrow.get(text, "MM/DD/YYYY HH:mm").replace(
           tzinfo=tz.tzlocal())
     except:
         flask.flash("Date '{}' didn't fit expected format 12/31/2001")
@@ -363,8 +394,6 @@ def list_calendars(service):
             "primary": primary,
             "description": desc
             })
-    logging.info("-----------Reach calender: ")
-    logging.info(result)
     return sorted(result, key=cal_sort_key)
 
 def list_events(service,calendar):
@@ -374,30 +403,82 @@ def list_events(service,calendar):
 	"""
 	app.logger.debug("Entering list_events")
 	event_list = service.events().list(calendarId=calendar).execute()["items"]
-	#logging.info("------Reach list_events")
 	result = [ ]
 	for eve in event_list:
 		if "transparency" in eve:
 			continue
 		else:
-			kind = eve["kind"]
 			id = eve["id"]
 			start = eve["start"]["dateTime"]
 			end = eve["end"]["dateTime"]
-			if "description" in eve:
-				desc = eve["description"]
-			else:
-				desc = "(no description)"
-			
+			summary = eve["summary"]
 			result.append(
-			  { "kind": kind,
-			  	"id": id,
-			  	"start": start,
-			  	"end": end,
-			  	"description": desc
-			  	})
-	#logging.info(result)
-	return result    	  	
+			      { "id": id,
+				"start": start,
+				"end": end,
+				"summary": summary
+				})
+	return result
+	
+def date_time_filter(events,begin_datetime,end_datetime):
+	"""
+	events is an list that contain the calender event. The start and end key are the string including the date and time in iso formate.
+	"""
+	#Initialize all the input date and time to the arrow object
+	# eb = event_begin_datetime, ee = event_end_datetime, ib = input(user defined)_begin_datetime, ie = input_end_time
+	ibegin = arrow.get(begin_datetime)
+	iend = arrow.get(end_datetime)
+	result = []
+	logging.info("----------This is ibegin: ")
+	logging.info(ibegin)
+	logging.info("----------This is iend: ")
+	logging.info(iend)
+	
+	"""
+	logging.info("----------This is comparison: ")
+	if (input_begin_datetime <= input_end_datetime):
+		logging.info("YY")  #YY
+	else:
+		logging.info("XX")
+	"""
+	#input_begin_time = arrow.get(begin_time).time()
+	#input_end_time = arrow.get(end_time).time()
+	
+	logging.info("----------This is events BEFORE: --------")
+	logging.info(events)
+	
+	for eve in events:
+		#Turn the event's date and time to arrow object
+		ebegin = arrow.get(eve["start"])
+		#eve_begin_date = arrow.get(str_eve_begin).date()
+		#eve_begin_time = arrow.get(str_eve_begin).time()
+		#logging.info("----------This is eve_begin_datetime: ")
+		#logging.info(eve_begin_datetime)
+		
+		eend = arrow.get(eve["end"])
+		
+		#event date is inside the defined range
+		if (ebegin.date()>= ibegin.date() and eend.date()<=iend.date()):
+			#case that whole inside the time
+			if (ebegin.time()>=ibegin.time() and eend.time()<=iend.time()):
+				result.append(eve)
+			#start earlier and end in the range
+			elif (ebegin.time()<ibegin.time() and eend.time() > ibegin.time()):
+				result.append(eve)
+			#start in the range and go over the range
+			elif (ebegin.time()<iend.time() and eend.time()>= iend.time()):
+				result.append(eve)
+		#event date start early and end in the date range
+		elif (ebegin.date()<ibegin.date() and eend.date()>ibegin.date()):
+			# end between start and end time
+			if (ibegin.time()<eend.time()<=iend.time()):
+				result.append(eve)
+		#event date begin in the date range over end date
+		elif (ebegin.date()<iend.date() and eend.date()>= iend.date()):
+			# Start time in the input start and end range
+			if (ibegin.time()<=ebegin.time()<iend.time()):
+				result.append(eve)
+	return result
   
 
 
