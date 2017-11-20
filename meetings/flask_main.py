@@ -440,7 +440,8 @@ def list_events(service,calendar):
 	Each event is represented by a dict.
 	"""
 	app.logger.debug("Entering list_events")
-	event_list = service.events().list(calendarId=calendar, orderBy="startTime", singleEvents=True).execute()["items"]
+	event_list = service.events().list(calendarId=calendar).execute()["items"]
+	# ,orderBy="startTime", singleEvents=True
 	result = [ ]
 	for eve in event_list:
 		if "transparency" in eve:
