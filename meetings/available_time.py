@@ -32,8 +32,15 @@ def calculate_free():
 	# Q: why init_eve = filtered_event[0] is out of range? filtered_event: [{}, {}, ... {}], is it means each dictionary inside cannot be sorted? Would it should allow user to sort it?
 	result = []
 	for eve in filtered_event:
-		if (eve['weekday'] not in result):
-			logging.info(" This is not in result")
+		weekday = eve['weekday']
+		logging.info ("This is weekday: ")
+		logging.info(weekday)
+		if (weekday in result):
+			result['weekday'] += eve
+		else:
+			result.append({weekday:eve})
+	logging.info("This is result: ")
+	logging.info(result)
 		
 	
 	result = "abc"
