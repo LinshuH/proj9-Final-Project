@@ -20,6 +20,9 @@ import httplib2   # used in oauth2 flow
 # Google API for services 
 from apiclient import discovery
 
+# Connect with available_time.py
+import available_time
+
 ###
 # Globals
 ###
@@ -44,8 +47,9 @@ APPLICATION_NAME = 'MeetMe class project'
 #
 #############################
 
-
-
+#Note:
+# global variable is only valid in this py file, flask.session[variable] is valid through the whole program.
+# to use the global variable, directly call it. To use the flask.session variable, everytime need variable = flask.session[variable]
 
 @app.route("/")
 @app.route("/index")
@@ -85,6 +89,9 @@ def choose():
     	temp = list_events(gcal_service,cal_id)
     	events += temp
     	temp = []
+    #sort the events based on the start time.
+    events.sort(key=lambda e: e['start'])
+    
     #The event is finish the calendar fielt at here
     #The event been selected by the date and time:
     #Get the date and time
@@ -93,11 +100,23 @@ def choose():
     
     #Function to do the filter:
     filtered_event = date_time_filter(events,begin_datetime,end_datetime)
-	
-	
+    flask.session['filtered_event'] = filtered_event
+   
     flask.g.events = filtered_event
     logging.info("--------------This is the g.events")
     logging.info(flask.g.events)
+    
+    #Section that transfer the busy time to free time by user selection
+    #busy_to_free is a global array created by the function to_free()
+    flask.session['busy_to_free'] = busy_to_free
+    flask.g.free = busy_to_free
+    
+    #connect to the available_time.py
+    test_t = available_time.calculate_free()
+    logging.info("--------------This is the test_t#####")
+    logging.info(test_t)
+    
+    
     return render_template('index.html')
     ##Q: I used want to combine _choose_cal function with /choose, but server does not allow to do so. Why? 
     ##   Why the event cannot directly call the choose?
@@ -261,6 +280,38 @@ def select_cal():
     return flask.redirect(flask.url_for("choose"))
 
 
+ 
+busy_to_free = []
+busy_to_freeId = []
+@app.route('/_to_free_time', methods=['POST'])
+def to_free():
+	"""
+	set the selected busy time to free, busy_to_free is the list that contain the events been set as the free time from the busy time list.
+	"""
+	#global busy_to_free #pass this to choose as the free time to print out
+	global busy_to_freeId
+	global busy_to_free
+	busy_to_freeId = request.form.getlist('to_free')
+	filtered_event = flask.session["filtered_event"]
+	
+	#logging.info("---------Getting busy_to_freeId at here-------------")
+	#logging.info(busy_to_freeId)
+	
+	# filtered_event is the list of events after filte the date,time and calendar. It is a flask data.
+	
+	#logging.info("---------Getting filtered_event at here-------------")
+	#logging.info(filtered_event)
+	for eve_id in busy_to_freeId:
+		for eve in filtered_event:
+			if (eve_id == eve['id']):
+				busy_to_free.append(eve)
+
+	return flask.redirect(flask.url_for("choose"))
+	
+	
+	
+
+
 ####
 #
 #   Initialize session variables 
@@ -389,7 +440,7 @@ def list_events(service,calendar):
 	Each event is represented by a dict.
 	"""
 	app.logger.debug("Entering list_events")
-	event_list = service.events().list(calendarId=calendar).execute()["items"]
+	event_list = service.events().list(calendarId=calendar, orderBy="startTime", singleEvents=True).execute()["items"]
 	result = [ ]
 	for eve in event_list:
 		if "transparency" in eve:
@@ -422,9 +473,6 @@ def date_time_filter(events,begin_datetime,end_datetime):
 		ebegin = arrow.get(eve["start"])
 		eend = arrow.get(eve["end"])
 		
-		logging.info("----------This is events: ")
-		logging.info(events)
-		
 		#event date is inside the defined range
 		if (ebegin.date()>= ibegin.date() and eend.date()<=iend.date()):
 			#case that whole inside the time
@@ -446,10 +494,27 @@ def date_time_filter(events,begin_datetime,end_datetime):
 			# Start time in the input start and end range
 			if (ibegin.time()<=ebegin.time()<iend.time()):
 				result.append(eve)
+	
+	#check whether the event is been checked to set as the free
 				
+	#logging.info("---------Getting busy_to_freeId in date_time filter-------------")
+	#logging.info(busy_to_freeId)
+	#logging.info("---------This is result before remove free time-------------")
+	#logging.info(result)
+	for freeId in busy_to_freeId:
+		for eve in result:
+			if (eve["id"] == freeId):
+				result.remove(eve)
+	#logging.info("---------This is result AFTER remove free time-------------")
+	#logging.info(result)
+	
+	#shows the date in the weekday
+	for eve in result:
+		eve["weekday"] = arrow.get(eve["start"]).format('dddd')
+		
 	logging.info("----------This is events after filter: ")
 	logging.info(result)
-	
+
 	return result
   
 

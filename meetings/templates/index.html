@@ -97,7 +97,7 @@
 
 <h4>This is calendars</h4>
 <form action="/_select_calendar" method="post">
-{% if g.calendars is defined  %}
+{% if g.calendars is defined %}
   <div class="row">
   {% for cal in g.calendars %}
       <div class="col-md-4">
@@ -111,20 +111,44 @@
 </form>
 
 <h4>This is busy time</h4>
+<form action="/_to_free_time" method="post">
 {% if g.events is defined  %}
   <div class="row">
   {% for eve in g.events %}
-      <div class="col-md-4">
+       <div class="col-md-4">
+      	 <input type="checkbox" name="to_free" id="{{ eve.summary }}" value="{{ eve.id }}">
         <!--Next step: Find how to print the class name on the page. -->
        <h6>Event<h6>
        <li>Event title: {{ eve.summary }}</li>
        <li>Start at: {{ eve.start }}</li>
        <li>End at: {{ eve.end }}</li>
-
+       <li>Weekday: {{ eve.weekday }}</li>
        </div>
   {% endfor %}
   </div>
-{% endif %}   
+{% endif %} 
+<input type="submit" value="Set these events to free" />
+</form>
+
+
+<h4>Events should not block calendar: </h4>
+{% if g.events is defined  %}
+  <div class="row">
+  {% for eve in g.free %}
+       <div class="col-md-4">
+        <!--Next step: Find how to print the class name on the page. -->
+       <h6>Event<h6>
+       <li>Event title: {{ eve.summary }}</li>
+       <li>Start at: {{ eve.start }}</li>
+       <li>End at: {{ eve.end }}</li>
+       <li>Weekday: {{ eve.weekday }}</li>
+       </div>
+  {% endfor %}
+  </div>
+{% endif %} 
+
+
+
 
   </div>  <!-- container (for bootstrap) -->
   </body> </html>
