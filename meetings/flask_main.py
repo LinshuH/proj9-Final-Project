@@ -111,10 +111,13 @@ def choose():
     flask.session['busy_to_free'] = busy_to_free
     flask.g.free = busy_to_free
     
+
+
     #connect to the available_time.py
-    test_t = available_time.calculate_free()
-    logging.info("--------------This is the test_t#####")
-    logging.info(test_t)
+    whole_events = available_time.combine_busy_free()
+    logging.info("-----------####This is the whole_events#####")
+    logging.info(whole_events)
+	flask.g.whole = whole_events
     
     
     return render_template('index.html')

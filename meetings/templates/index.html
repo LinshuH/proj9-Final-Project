@@ -110,6 +110,7 @@
 <input type="submit" value="Select Calendars" />
 </form>
 
+
 <h4>This is busy time</h4>
 <form action="/_to_free_time" method="post">
 {% if g.events is defined  %}
@@ -142,6 +143,22 @@
        <li>Start at: {{ eve.start }}</li>
        <li>End at: {{ eve.end }}</li>
        <li>Weekday: {{ eve.weekday }}</li>
+       </div>
+  {% endfor %}
+  </div>
+{% endif %} 
+
+
+<h4>Whole Summary: </h4>
+{% if g.events is defined  %}
+  <div class="row">
+  {% for eve in g.whole %}
+       <div class="col-md-4">
+        <!--Next step: Find how to print the class name on the page. -->
+       <h6>{{ eve.weekday }}<h6>
+       <li>Event title: {{ eve.summary }}</li>
+       <li>Start at: {{ eve.start }}</li>
+       <li>End at: {{ eve.end }}</li>
        </div>
   {% endfor %}
   </div>
