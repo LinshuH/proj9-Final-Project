@@ -73,12 +73,19 @@ def combine_busy_free():
 		busy_free_combine.append(eve)
 
 	busy_free_combine.sort(key=lambda e: e['start'])
+		
 	return busy_free_combine
 	
 
-def merge(events):	
+def merge(events):
+	"""
+	Merge the events time.
+	Combine the overlap part.
+	"""	
 	logging.info("This is the range: ----------")
 	logging.info(range(len(events)))
+	logging.info(len(events))
+	logging.info(events)
 	merge_events = []
 	
 	merge_count = 0
@@ -89,12 +96,6 @@ def merge(events):
 	# the eve['weekday'] would work is because eve is a dictionary, this data structure allow user to do so.
 	for i in range(len(events)-1):
 		next_eve = events[i+1]
-		"""
-		logging.info("This is the current merge: ----")
-		logging.info(merge_events[merge_count])
-		logging.info("This is the next_eve: ----")
-		logging.info(next_eve)
-		"""
 		
 		merge_begin = arrow.get(merge_events[merge_count]['start'])
 		merge_end = arrow.get(merge_events[merge_count]['end'])
@@ -137,20 +138,12 @@ def calculate_free(free_time,busy_events):
 		free_end = arrow.get(free['end'])
 				
 		temp_start = free_start
-		logging.info("---------This is initial temp_start: ")
-		logging.info(temp_start)
 		temp_end = free_end
-		logging.info("---------This is initial temp_end: ")
-		logging.info(temp_end)
-		
+
 		for eve in busy_events:
 			eve_start = arrow.get(eve['start'])
-			logging.info("---------This is initial eve_start: ")
-			logging.info(eve_start)
 			eve_end = arrow.get(eve['end'])
-			logging.info("---------This is initial eve_end: ")
-			logging.info(eve_end)
-
+			
 			#part overlap at begining
 			if (eve_start<free_start<eve_end):
 				temp_start = eve_end
@@ -159,10 +152,6 @@ def calculate_free(free_time,busy_events):
 			#whole eve is in the free time range
 			elif (eve_start>temp_start and eve_end<free_end):
 				temp_end = eve_start
-				logging.info("This is temp_start: ")
-				logging.info(temp_start)
-				logging.info("This is temp_end" )
-				logging.info(temp_end)
 				new_free.append(
 				{ "summary": "free time",
 				  "start": temp_start.isoformat(),

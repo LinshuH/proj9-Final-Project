@@ -119,11 +119,10 @@
        <div class="col-md-4">
       	 <input type="checkbox" name="to_free" id="{{ eve.summary }}" value="{{ eve.id }}">
         <!--Next step: Find how to print the class name on the page. -->
-       <h6>Event<h6>
+       <h6>{{ eve.weekday }}<h6>
        <li>Event title: {{ eve.summary }}</li>
        <li>Start at: {{ eve.start }}</li>
        <li>End at: {{ eve.end }}</li>
-       <li>Weekday: {{ eve.weekday }}</li>
        </div>
   {% endfor %}
   </div>
@@ -142,11 +141,10 @@
   {% for eve in g.tofree %}
        <div class="col-md-4">
         <!--Next step: Find how to print the class name on the page. -->
-       <h6>Event<h6>
+       <h6>{{ eve.weekday }}<h6>
        <li>Event title: {{ eve.summary }}</li>
        <li>Start at: {{ eve.start }}</li>
        <li>End at: {{ eve.end }}</li>
-       <li>Weekday: {{ eve.weekday }}</li>
        </div>
   {% endfor %}
   </div>
@@ -157,14 +155,10 @@
 {% if g.events is defined  %}
   <div class="row">
 
-  ini_eve = g.whole[0]
-  {{ "test:" }}
-  {{ ini_eve }}
 
   {% for eve in g.whole %}
        <div class="col-md-4">
         <!--Next step: Find how to print the class name on the page. -->
-
        <h6>{{ eve.weekday }}<h6>
        <li>Event title: {{ eve.summary }}</li>
        <li>Start at: {{ eve.start }}</li>
@@ -173,7 +167,7 @@
   {% endfor %}
   </div>
 {% endif %} 
-
+</script>
 
 
 
