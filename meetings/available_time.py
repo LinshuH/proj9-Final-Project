@@ -163,4 +163,20 @@ def calculate_free(first_end,second_begin):
 	free.sort(key=lambda e: e['start'])
 	return free
 	
-
+'''
+new_free = []
+for free in free_time:
+	free_start = arrow.get(free['start'])
+	free_end = arrow.get(free['end'])
+	for eve in busy_events:
+		eve_start = arrow.get(eve['start'])
+		eve_end = arrow.get(eve['end'])
+		temp_start = free_start
+		temp_end = free_end
+		
+		if (eve_start<free_start<eve_end):
+			temp_start = eve_end
+		if (eve_start>free_start and eve_end<free_end):
+			temp_end = eve_start
+'''
+			
