@@ -17,8 +17,8 @@ def combine_busy_free():
 	"""
 	#logging.info("-------Enter available_time")
 	filtered_event = flask.session['filtered_event']
-	#logging.info("Get the filtered_event")
-	#logging.info(filtered_event)
+	logging.info("Get the filtered_event")
+	logging.info(filtered_event)
 	busy_to_free = flask.session['busy_to_free']
 	#logging.info("Get the busy_to_free")
 	#logging.info(busy_to_free)
@@ -32,11 +32,11 @@ def combine_busy_free():
 	
 	#logging.info("Get the end_datetime")
 	#logging.info(end_datetime)
-	global busy_free_combine
 	busy_free_combine = []
 	
 	
 	merge_events = merge(filtered_event)
+	
 	for i in range(len(merge_events)-1):
 		first_begin = arrow.get(merge_events[i]['start'])
 		first_end = arrow.get(merge_events[i]['end'])
@@ -66,16 +66,14 @@ def merge(events):
 	logging.info("This is the range: ----------")
 	logging.info(range(len(events)))
 	merge_events = []
-	n = 0
+	
 	merge_count = 0
+	if len(events) == 0:
+		return [ ]
+	merge_events.append(events[0])
+	# merge_events[0] = events[0] will not work since the merge_events is an empty array, user cannot "change" the value in a empty position. 
+	# the eve['weekday'] would work is because eve is a dictionary, this data structure allow user to do so.
 	for i in range(len(events)-1):
-		#Use this block to initialize the merge_events
-		
-		if (n<1):
-			merge_events.append(events[0])
-			n = 2	
-			
-		#first = events[i]
 		next_eve = events[i+1]
 		logging.info("This is the current merge: ----")
 		logging.info(merge_events[merge_count])
@@ -107,6 +105,7 @@ def merge(events):
 	
 	logging.info("This is the events after the merge: ")
 	logging.info(range(len(merge_events)))
+	logging.info(merge_events)
 	return merge_events
 			
 
@@ -114,8 +113,11 @@ def merge(events):
 global free
 free = []
 def calculate_free(first_end,second_begin):
+
 	# Cases that second event happen after the first event finish, therefore, there are some free time.
 	# subcase when the date start time is in between the events.
+	logging.info("Get first_end here----------------: ")
+	logging.info(first_end)
 	if (first_end.time() < begin_datetime.time() < second_begin.time() ):
 		start = second_begin.date()+"T"+begin_datetime.time()
 		free_start = arrow.get(start).replace(tzinfo=tz.tzlocal()).isoformat()
@@ -151,16 +153,36 @@ def calculate_free(first_end,second_begin):
 		else:
 			datetime_diff = second_begin - first_end
 			for i in range(datetime_diff.days):
-				start = begin_datetime.shift(hours=+24*i).isoformat()
-				end = end_datetime.shift(hours=+24*i).isoformat()
+				free_start = begin_datetime.shift(hours=+24*i).isoformat()
+				free_end = end_datetime.shift(hours=+24*i).isoformat()
 				free.append(
 				{ "summary": "free time",
-				  "start": start,
-				  "end": end,
+				  "start": free_start,
+				  "end": free_end,
 				  "weekday": arrow.get(free_start).format('dddd')
 				 })
+
 			
 	free.sort(key=lambda e: e['start'])
 	return free
+	
+	
+
+'''
+new_free = []
+for free in free_time:
+	free_start = arrow.get(free['start'])
+	free_end = arrow.get(free['end'])
+	for eve in busy_events:
+		eve_start = arrow.get(eve['start'])
+		eve_end = arrow.get(eve['end'])
+		temp_start = free_start
+		temp_end = free_end
+		
+		if (eve_start<free_start<eve_end):
+			temp_start = eve_end
+		if (eve_start>free_start and eve_end<free_end):
+			temp_end = eve_start
+'''
 	
 

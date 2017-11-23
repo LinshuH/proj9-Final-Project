@@ -117,7 +117,7 @@ def choose():
     whole_events = available_time.combine_busy_free()
     logging.info("-----------####This is the whole_events#####")
     logging.info(whole_events)
-	flask.g.whole = whole_events
+    flask.g.whole = whole_events
     
     
     return render_template('index.html')
