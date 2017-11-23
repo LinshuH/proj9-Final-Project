@@ -109,7 +109,7 @@ def choose():
     #Section that transfer the busy time to free time by user selection
     #busy_to_free is a global array created by the function to_free()
     flask.session['busy_to_free'] = busy_to_free
-    flask.g.free = busy_to_free
+    flask.g.tofree = busy_to_free
     
 
 

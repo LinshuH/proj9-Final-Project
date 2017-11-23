@@ -135,7 +135,11 @@
 <h4>Events should not block calendar: </h4>
 {% if g.events is defined  %}
   <div class="row">
-  {% for eve in g.free %}
+  {% if g.tofree|length == 0 %}
+  		<li>{{ None }}</li>
+  {% endif %}
+
+  {% for eve in g.tofree %}
        <div class="col-md-4">
         <!--Next step: Find how to print the class name on the page. -->
        <h6>Event<h6>
@@ -147,14 +151,20 @@
   {% endfor %}
   </div>
 {% endif %} 
-
+<br>
 
 <h4>Whole Summary: </h4>
 {% if g.events is defined  %}
   <div class="row">
+
+  ini_eve = g.whole[0]
+  {{ "test:" }}
+  {{ ini_eve }}
+
   {% for eve in g.whole %}
        <div class="col-md-4">
         <!--Next step: Find how to print the class name on the page. -->
+
        <h6>{{ eve.weekday }}<h6>
        <li>Event title: {{ eve.summary }}</li>
        <li>Start at: {{ eve.start }}</li>

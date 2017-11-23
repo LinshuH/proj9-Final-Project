@@ -5,6 +5,7 @@ It also summarize the time block of whole day, including both free and busy time
 import logging
 import flask
 import arrow
+from dateutil import tz
 
 app = flask.Flask(__name__)
 app.logger.setLevel(logging.INFO) ##Used to be .DEBUG
@@ -35,32 +36,45 @@ def combine_busy_free():
 	busy_free_combine = []
 	
 	
-	merge_events = merge(filtered_event)
+	#Generates the free time array every date from user defined time
+	ini_free = []
+	datetime_diff = end_datetime - begin_datetime
 	
-	for i in range(len(merge_events)-1):
-		first_begin = arrow.get(merge_events[i]['start'])
-		first_end = arrow.get(merge_events[i]['end'])
-		second_begin = arrow.get(merge_events[i+1]['start'])
-		second_end = arrow.get(merge_events[i+1]['end'])
-		if (i == 0):
-			calculate_free(begin_datetime, first_begin)
-			calculate_free(first_end, second_begin)
-		elif (i == len(filtered_event) - 2):
-			calculate_free(first_end, second_begin)
-			calculate_free(second_end, end_datetime)
-		else: 
-			calculate_free(first_end, second_begin)
-	
-	for eve in merge_events:
-		busy_free_combine.append(eve)
-	for eve in free:
-		busy_free_combine.append(eve)
+	#Set the daily end time.
+	free_end_datetime = arrow.get(begin_datetime.date().isoformat()+"T"+end_datetime.time().isoformat()).replace(tzinfo=tz.tzlocal())
 		
+	for i in range(datetime_diff.days+1):
+		free_start = begin_datetime.shift(hours=+24*i).isoformat()
+		free_end = free_end_datetime.shift(hours=+24*i).isoformat()
+		
+		ini_free.append(
+			{ "summary": "free time",
+			  "start": free_start,
+			  "end": free_end,
+			  "weekday": arrow.get(free_start).format('dddd')
+			})
+	
+	logging.info("-----------This is the ini_Free--------")
+	logging.info(ini_free)
+		
+	merge_events = merge(filtered_event)
+	free_times = calculate_free(ini_free,merge_events)
+	
+	#The merge_events is used for combine the overlapping events, for the view of the user, still display the original events
+	for eve in filtered_event:
+		busy_free_combine.append(eve)
+	
+	#These events used to be the busy, changing the title to infor the users that this events can be free.
+	for eve in busy_to_free:
+		eve["summary"] += "--( Can be free )"
+		busy_free_combine.append(eve)
+	
+	for eve in free_times:
+		busy_free_combine.append(eve)
+
 	busy_free_combine.sort(key=lambda e: e['start'])
 	return busy_free_combine
 	
-	# Q: why init_eve = filtered_event[0] is out of range? filtered_event: [{}, {}, ... {}], is it means each dictionary inside cannot be sorted? Would it should allow user to sort it?
-
 
 def merge(events):	
 	logging.info("This is the range: ----------")
@@ -75,11 +89,12 @@ def merge(events):
 	# the eve['weekday'] would work is because eve is a dictionary, this data structure allow user to do so.
 	for i in range(len(events)-1):
 		next_eve = events[i+1]
+		"""
 		logging.info("This is the current merge: ----")
 		logging.info(merge_events[merge_count])
 		logging.info("This is the next_eve: ----")
 		logging.info(next_eve)
-		
+		"""
 		
 		merge_begin = arrow.get(merge_events[merge_count]['start'])
 		merge_end = arrow.get(merge_events[merge_count]['end'])
@@ -110,86 +125,71 @@ def merge(events):
 			
 
 
-global free
-free = []
-def calculate_free(first_end,second_begin):
-
-	# Cases that second event happen after the first event finish, therefore, there are some free time.
-	# subcase when the date start time is in between the events.
-	logging.info("Get first_end here----------------: ")
-	logging.info(first_end)
-	if (first_end.time() < begin_datetime.time() < second_begin.time() ):
-		start = second_begin.date()+"T"+begin_datetime.time()
-		free_start = arrow.get(start).replace(tzinfo=tz.tzlocal()).isoformat()
-		free_end = second_begin.isoformat()
-		free.append(
-			{ "summary": "free time",
-			  "start": free_start,
-			  "end": free_end,
-			  "weekday": arrow.get(free_start).format('dddd')
-			})
-	# subcase when the date end time is between the events
-	elif (first_end.time() < end_datetime.time() < second_begin.time() ):
-		free_start = first_end.isoformat()
-		end = first_end.date()+"T"+end_datetime.time()
-		free_end = arrow.get(end).replace(tzinfo=tz.tzlocal()).isoformat()
-		free.append(
-			{ "summary": "free time",
-			  "start": free_start,
-			  "end": free_end,
-			  "weekday": arrow.get(free_start).format('dddd')
-			})
-	# subcase that free time is in between
-	else:
-		if (first_end.date() == second_begin.date()):
-			free_start = first_end.isoformat()
-			free_end = second_begin.isoformat()
-			free.append(
-				{ "summary": "free time",
-				  "start": free_start,
-				  "end": free_end,
-				  "weekday": arrow.get(free_start).format('dddd')
-				})
-		else:
-			datetime_diff = second_begin - first_end
-			for i in range(datetime_diff.days):
-				free_start = begin_datetime.shift(hours=+24*i).isoformat()
-				free_end = end_datetime.shift(hours=+24*i).isoformat()
-				free.append(
-				{ "summary": "free time",
-				  "start": free_start,
-				  "end": free_end,
-				  "weekday": arrow.get(free_start).format('dddd')
-				 })
-
-			
-	free.sort(key=lambda e: e['start'])
-	return free
-	
-<<<<<<< HEAD
-	
-
-=======
->>>>>>> 60bb463fa2c7fcec741cf3d9e7133e4669ad6a13
-'''
-new_free = []
-for free in free_time:
-	free_start = arrow.get(free['start'])
-	free_end = arrow.get(free['end'])
-	for eve in busy_events:
-		eve_start = arrow.get(eve['start'])
-		eve_end = arrow.get(eve['end'])
+def calculate_free(free_time,busy_events):
+	"""
+	Args:
+	free_time: the list of the free time before substracting the busy_events. The initial date and time range of the free_time is set by the users. Shows the daily free time. For example, if the start and end datetime is 11-13 09:00 - 11-15 20:00, then free time contains 3 events, every events start at 9am end at 8pm, and in date 11-13, 11-14, 11-15
+	busy_events: this is generated from the flask_main as the events shown on the calendar.
+	"""
+	new_free = []
+	for free in free_time:
+		free_start = arrow.get(free['start'])
+		free_end = arrow.get(free['end'])
+				
 		temp_start = free_start
+		logging.info("---------This is initial temp_start: ")
+		logging.info(temp_start)
 		temp_end = free_end
+		logging.info("---------This is initial temp_end: ")
+		logging.info(temp_end)
 		
-		if (eve_start<free_start<eve_end):
-			temp_start = eve_end
-		if (eve_start>free_start and eve_end<free_end):
-			temp_end = eve_start
-'''
-<<<<<<< HEAD
-	
+		for eve in busy_events:
+			eve_start = arrow.get(eve['start'])
+			logging.info("---------This is initial eve_start: ")
+			logging.info(eve_start)
+			eve_end = arrow.get(eve['end'])
+			logging.info("---------This is initial eve_end: ")
+			logging.info(eve_end)
 
-=======
-			
->>>>>>> 60bb463fa2c7fcec741cf3d9e7133e4669ad6a13
+			#part overlap at begining
+			if (eve_start<free_start<eve_end):
+				temp_start = eve_end
+				logging.info("----------This is temp_start in first if: ")
+				logging.info(temp_start)
+			#whole eve is in the free time range
+			elif (eve_start>temp_start and eve_end<free_end):
+				temp_end = eve_start
+				logging.info("This is temp_start: ")
+				logging.info(temp_start)
+				logging.info("This is temp_end" )
+				logging.info(temp_end)
+				new_free.append(
+				{ "summary": "free time",
+				  "start": temp_start.isoformat(),
+				  "end": temp_end.isoformat(),
+				  "weekday": arrow.get(temp_start).format('dddd')
+				 })
+				temp_start = eve_end
+				temp_end = free_end
+			#part overlap at the end
+			elif (eve_start<free_end<eve_end):
+				temp_end = eve_start
+				
+		new_free.append(
+			{ "summary": "free time",
+			  "start": temp_start.isoformat(),
+			  "end": temp_end.isoformat(),
+			  "weekday": arrow.get(temp_start).format('dddd')
+			 })
+			 
+	new_free.sort(key=lambda e: e['start'])
+	
+	logging.info("-------------This is the new_free: ---------")
+	logging.info(new_free)
+				 
+	return new_free
+
+
+
+
+
