@@ -166,8 +166,11 @@ def calculate_free(first_end,second_begin):
 	free.sort(key=lambda e: e['start'])
 	return free
 	
+<<<<<<< HEAD
 	
 
+=======
+>>>>>>> 60bb463fa2c7fcec741cf3d9e7133e4669ad6a13
 '''
 new_free = []
 for free in free_time:
@@ -184,5 +187,9 @@ for free in free_time:
 		if (eve_start>free_start and eve_end<free_end):
 			temp_end = eve_start
 '''
+<<<<<<< HEAD
 	
 
+=======
+			
+>>>>>>> 60bb463fa2c7fcec741cf3d9e7133e4669ad6a13
