@@ -78,49 +78,54 @@ def choose():
 
     logging.info("---------This is g.calendars:")
     flask.g.calendars = list_calendars(gcal_service)
-    logging.info(flask.g.calendars) 
+    logging.info(flask.g.calendars)
     
-    
-    logging.info("------------Choose Get cal_ids: ---------")
-    logging.info(cal_ids)
-    events = []  # events is an array that contains the event.
-    temp = []
-    for cal_id in cal_ids:
-    	temp = list_events(gcal_service,cal_id)
-    	events += temp
+    logging.info("------------#####This is flask.session-------")
+    logging.info(flask.session)
+    # select the calendar, and based ont the date and time and calender to filter the events
+    if ('cal_ids' in flask.session):
+    	cal_ids = flask.session['cal_ids']
+    	logging.info("------------Choose Get cal_ids: ---------")
+    	logging.info(cal_ids)
+    	events = []  # events is an array that contains the event.
     	temp = []
-    #sort the events based on the start time.
-    events.sort(key=lambda e: e['start'])
-    
-    #The event is finish the calendar fielt at here
-    #The event been selected by the date and time:
-    #Get the date and time
-    begin_datetime = flask.session['begin_datetime']
-    end_datetime = flask.session['end_datetime']
-    
-    #Function to do the filter:
-    filtered_event = date_time_filter(events,begin_datetime,end_datetime)
-    flask.session['filtered_event'] = filtered_event
-   
-    flask.g.events = filtered_event
-    logging.info("--------------This is the g.events")
-    logging.info(flask.g.events)
-    
-    #Section that transfer the busy time to free time by user selection
-    #busy_to_free is a global array created by the function to_free()
-    flask.session['busy_to_free'] = busy_to_free
-    flask.g.tofree = busy_to_free
-    
-
-
-    #connect to the available_time.py
-    whole_events = available_time.combine_busy_free()
-    logging.info("-----------####This is the whole_events#####")
-    logging.info(whole_events)
-    flask.session['whole_events'] = whole_events
-    flask.g.whole = whole_events
-    
-    
+    	for cal_id in cal_ids:
+    		temp = list_events(gcal_service,cal_id)
+    		events += temp
+    		temp = []
+    	#sort the events based on the start time.
+    	events.sort(key=lambda e: e['start'])
+    	
+    	#The event is finish the calendar fielt at here
+		#The event been selected by the date and time:
+		#Get the date and time
+		
+    	begin_datetime = flask.session['begin_datetime']
+    	end_datetime = flask.session['end_datetime']
+    	
+    	#Function to do the filter:
+    	filtered_event = date_time_filter(events,begin_datetime,end_datetime)
+    	flask.session['filtered_event'] = filtered_event
+    	
+    	flask.g.events = filtered_event
+    	logging.info("--------------This is the g.events")
+    	logging.info(flask.g.events)
+    		
+    	#Section that transfer the busy time to free time by user selection
+    	#busy_to_free is a global array created by the function to_free()
+    	if ("busy_to_free" in flask.session):
+    		busy_to_free = flask.session['busy_to_free']
+    		logging.info("-----------Get busy_to_free at choose -----------")
+    		logging.info(busy_to_free)
+    		flask.g.tofree = busy_to_free
+    		
+    		#connect to the available_time.py
+    		whole_events = available_time.combine_busy_free()
+    		logging.info("-----------####This is the whole_events#####")
+    		logging.info(whole_events)
+    		flask.session['whole_events'] = whole_events
+    		flask.g.whole = whole_events
+    		
     return render_template('index.html')
     ##Q: I used want to combine _choose_cal function with /choose, but server does not allow to do so. Why? 
     ##   Why the event cannot directly call the choose?
@@ -273,19 +278,20 @@ def setrange(): #get the input date
     return flask.redirect(flask.url_for("choose"))
 
 
-cal_ids = []
 @app.route('/_select_calendar', methods=['POST'])
 def select_cal():
     """
     get the id of the calendars that user choose from checkbox
     """
-    global cal_ids
     cal_ids = request.form.getlist('summary')
+    flask.session['cal_ids'] = cal_ids
+    logging.info("----------get the flask.session['cal_ids']-----")
+    logging.info(flask.session['cal_ids'])
     return flask.redirect(flask.url_for("choose"))
 
 
  
-busy_to_free = []
+#busy_to_free = []
 busy_to_freeId = []
 @app.route('/_to_free_time', methods=['POST'])
 def to_free():
@@ -294,7 +300,7 @@ def to_free():
 	"""
 	#global busy_to_free #pass this to choose as the free time to print out
 	global busy_to_freeId
-	global busy_to_free
+	#global busy_to_free
 	busy_to_freeId = request.form.getlist('to_free')
 	filtered_event = flask.session["filtered_event"]
 	
@@ -302,6 +308,8 @@ def to_free():
 		for eve in filtered_event:
 			if (eve_id == eve['id']):
 				busy_to_free.append(eve)
+	
+	flask.session['busy_to_free'] = busy_to_free	
 
 	return flask.redirect(flask.url_for("choose"))
 	

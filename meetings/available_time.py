@@ -23,12 +23,12 @@ def combine_busy_free():
 	busy_to_free = flask.session['busy_to_free']
 	#logging.info("Get the busy_to_free")
 	#logging.info(busy_to_free)
-	global begin_datetime
+
 	begin_datetime = arrow.get(flask.session['begin_datetime'])
 	
 	#logging.info("Get the begin_datetime")
 	#logging.info(begin_datetime)
-	global end_datetime
+
 	end_datetime = arrow.get(flask.session['end_datetime'])
 	
 	#logging.info("Get the end_datetime")
@@ -40,7 +40,7 @@ def combine_busy_free():
 	ini_free = []
 	datetime_diff = end_datetime - begin_datetime
 	
-	#Set the daily end time.
+	#Initialize the free date and time
 	free_end_datetime = arrow.get(begin_datetime.date().isoformat()+"T"+end_datetime.time().isoformat()).replace(tzinfo=tz.tzlocal())
 		
 	for i in range(datetime_diff.days+1):
@@ -172,6 +172,10 @@ def calculate_free(free_time,busy_events):
 			 })
 			 
 	new_free.sort(key=lambda e: e['start'])
+	n = 0
+	for eve in new_free:
+		eve['id'] = n
+		n += 1
 	
 	logging.info("-------------This is the new_free: ---------")
 	logging.info(new_free)

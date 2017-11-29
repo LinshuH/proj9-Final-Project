@@ -111,9 +111,9 @@
 </form>
 
 
+{% if g.events is defined  %}
 <h4>This is busy time</h4>
 <form action="/_to_free_time" method="post">
-{% if g.events is defined  %}
   <div class="row">
   {% for eve in g.events %}
        <div class="col-md-4">
@@ -126,17 +126,18 @@
        </div>
   {% endfor %}
   </div>
-{% endif %} 
 <input type="submit" value="Set these events to free" />
 </form>
+{% endif %}
 
-
+{% if g.tofree is defined  %}
 <h4>Events should not block calendar: </h4>
-{% if g.events is defined  %}
   <div class="row">
-  {% if g.tofree|length == 0 %}
+
+ <!-- {% if g.tofree|length == 0 %}
   		<li>{{ None }}</li>
   {% endif %}
+-->
 
   {% for eve in g.tofree %}
        <div class="col-md-4">
@@ -151,8 +152,9 @@
 {% endif %} 
 <br>
 
+
 <h4>Whole Summary: </h4>
-{% if g.events is defined  %}
+{% if g.whole is defined  %}
   <div class="row">
 
 
