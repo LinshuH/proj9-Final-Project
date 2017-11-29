@@ -292,24 +292,26 @@ def select_cal():
 
  
 #busy_to_free = []
-busy_to_freeId = []
+#busy_to_freeId = []
 @app.route('/_to_free_time', methods=['POST'])
 def to_free():
 	"""
 	set the selected busy time to free, busy_to_free is the list that contain the events been set as the free time from the busy time list.
 	"""
 	#global busy_to_free #pass this to choose as the free time to print out
-	global busy_to_freeId
+	#global busy_to_freeId
 	#global busy_to_free
 	busy_to_freeId = request.form.getlist('to_free')
 	filtered_event = flask.session["filtered_event"]
+	busy_to_free = []
 	
 	for eve_id in busy_to_freeId:
 		for eve in filtered_event:
 			if (eve_id == eve['id']):
 				busy_to_free.append(eve)
 	
-	flask.session['busy_to_free'] = busy_to_free	
+	flask.session['busy_to_free'] = busy_to_free
+	flask.session['busy_to_freeId'] = busy_to_freeId
 
 	return flask.redirect(flask.url_for("choose"))
 	
@@ -501,11 +503,12 @@ def date_time_filter(events,begin_datetime,end_datetime):
 			if (ibegin.time()<=ebegin.time()<iend.time()):
 				result.append(eve)
 	
-	
-	for freeId in busy_to_freeId:
-		for eve in result:
-			if (eve["id"] == freeId):
-				result.remove(eve)
+	if ("busy_to_freeId" in flask.session):
+		busy_to_freeId = flask.session['busy_to_freeId']
+		for freeId in busy_to_freeId:
+			for eve in result:
+				if (eve["id"] == freeId):
+					result.remove(eve)
 	
 	for eve in result:
 		eve["weekday"] = arrow.get(eve["start"]).format('dddd')
