@@ -22,6 +22,7 @@ from apiclient import discovery
 
 # Connect with available_time.py
 import available_time
+import database
 
 ###
 # Globals
@@ -119,7 +120,8 @@ def choose():
     	busy_to_free = flask.session['busy_to_free']
     	cal_ids = flask.session['cal_ids']
     	cal_busy_to_free = []
-
+		
+		#update the busy_to_free when select the new calendar
     	for eve in busy_to_free:
     		if (eve['calendarId'] in cal_ids and eve not in cal_busy_to_free):
     			cal_busy_to_free.append(eve)
@@ -129,9 +131,13 @@ def choose():
     if ('filtered_event' and 'busy_to_free' in flask.session):
     	#connect to the available_time.py
     	whole_events = available_time.combine_busy_free()
-    	logging.info("-----------####This is the whole_events#####")
-    	logging.info(whole_events)
-    	flask.session['whole_events'] = whole_events
+    	logging.info("-----------####This is the whole summary#####")
+    	logging.info("-------------1, This is busy events-------")
+    	logging.info(flask.session['filtered_event'])
+    	logging.info("-------------2, This is 'busy_to_free'------")
+    	logging.info(flask.session['busy_to_free'])
+    	logging.info("-------------3, This is 'free_time'------")
+    	logging.info(flask.session['free_time'])
     	flask.g.whole = whole_events
 
     return render_template('index.html')
@@ -327,8 +333,10 @@ def to_database():
 	This function send the free meeting time to database as long as the user confirm.
 	"""
 	free_time = flask.session['free_time']
-	logging.info("------------This is to_Database function's free_times")
+	logging.info("-------#########This is to_Database function's free_times")
 	logging.info(free_time)
+	database.create_memo(free_time)
+	return flask.redirect(flask.url_for("choose"))
 
 
 	

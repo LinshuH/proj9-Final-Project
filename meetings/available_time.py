@@ -41,8 +41,6 @@ def combine_busy_free():
 	for eve in filtered_event:
 		busy_free_combine.append(eve)
 	
-	
-	
 	for eve in free_times:
 		busy_free_combine.append(eve)
 
@@ -149,8 +147,8 @@ def calculate_free(free_time,busy_events):
 			#part overlap at begining
 			if (eve_start<free_start<eve_end):
 				temp_start = eve_end
-				logging.info("----------This is temp_start in first if: ")
-				logging.info(temp_start)
+				#logging.info("----------This is temp_start in first if: ")
+				#logging.info(temp_start)
 			#whole eve is in the free time range
 			elif (eve_start>temp_start and eve_end<free_end):
 				temp_end = eve_start
@@ -175,20 +173,23 @@ def calculate_free(free_time,busy_events):
 	
 	#These events used to be the busy, changing the title to infor the users that this events can be free. Add them to the new_free time
 	busy_to_free = flask.session['busy_to_free']
-	#logging.info("Get the busy_to_free")
-	#logging.info(busy_to_free)
+	logging.info("--------Get the busy_to_free in available_Time------")
+	logging.info(busy_to_free)
 	
-	for eve in busy_to_free:
-		if ("--( Can be free )" not in eve["summary"]):
-			eve["summary"] += "--( Can be free )"
-			new_free.append(eve)
-			 
-	new_free.sort(key=lambda e: e['start'])
-	#add the id to each free event
 	n = 0
 	for eve in new_free:
 		eve['id'] = n
 		n += 1
+	
+	for eve in busy_to_free:
+		if ("--( Can be free )" not in eve["summary"]):
+			eve["summary"] += "--( Can be free )"
+		if (eve not in new_free):
+			new_free.append(eve)
+			 
+	new_free.sort(key=lambda e: e['start'])
+	#add the id to each free event
+	
 	
 	flask.g.free = new_free
 	logging.info("-----Get the flask.g.free at here--------")
