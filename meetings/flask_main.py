@@ -41,6 +41,8 @@ SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
 CLIENT_SECRET_FILE = CONFIG.GOOGLE_KEY_FILE  ## You'll need this
 APPLICATION_NAME = 'MeetMe class project'
 
+#if if __name__ == #not main(from heroku)
+
 #############################
 #
 #  Pages (routed from URLs)
@@ -93,7 +95,7 @@ def choose():
     		temp = list_events(gcal_service,cal_id)
     		events += temp
     		temp = []
-    	#sort the events based on the start time.
+    	#sort the events based on th/choosee start time.
     	events.sort(key=lambda e: e['start'])
     	
     	#The event is finish the calendar fielt at here
@@ -112,20 +114,26 @@ def choose():
     	logging.info(flask.g.events)
     		
     	#Section that transfer the busy time to free time by user selection
-    	#busy_to_free is a global array created by the function to_free()
-    	if ("busy_to_free" in flask.session):
-    		busy_to_free = flask.session['busy_to_free']
-    		logging.info("-----------Get busy_to_free at choose -----------")
-    		logging.info(busy_to_free)
-    		flask.g.tofree = busy_to_free
-    		
-    		#connect to the available_time.py
-    		whole_events = available_time.combine_busy_free()
-    		logging.info("-----------####This is the whole_events#####")
-    		logging.info(whole_events)
-    		flask.session['whole_events'] = whole_events
-    		flask.g.whole = whole_events
-    		
+    	#busy_to_free is a flask session array created by the function to_free()
+    if ("busy_to_free" in flask.session):
+    	busy_to_free = flask.session['busy_to_free']
+    	cal_ids = flask.session['cal_ids']
+    	cal_busy_to_free = []
+
+    	for eve in busy_to_free:
+    		if (eve['calendarId'] in cal_ids and eve not in cal_busy_to_free):
+    			cal_busy_to_free.append(eve)
+    	flask.session['busy_to_free'] = cal_busy_to_free
+    	flask.g.tofree = cal_busy_to_free
+    
+    if ('filtered_event' and 'busy_to_free' in flask.session):
+    	#connect to the available_time.py
+    	whole_events = available_time.combine_busy_free()
+    	logging.info("-----------####This is the whole_events#####")
+    	logging.info(whole_events)
+    	flask.session['whole_events'] = whole_events
+    	flask.g.whole = whole_events
+
     return render_template('index.html')
     ##Q: I used want to combine _choose_cal function with /choose, but server does not allow to do so. Why? 
     ##   Why the event cannot directly call the choose?
@@ -205,10 +213,13 @@ def oauth2callback():
   and so on.
   """
   app.logger.debug("Entering oauth2callback")
+  #if (isMain) 
   flow =  client.flow_from_clientsecrets(
-      CLIENT_SECRET_FILE,
+      CLIENT_SECRET_FILE, #client_secret_json file
       scope= SCOPES,
       redirect_uri=flask.url_for('oauth2callback', _external=True))
+  #else:
+  
   ## Note we are *not* redirecting above.  We are noting *where*
   ## we will redirect to, which is this function. 
   
@@ -291,19 +302,14 @@ def select_cal():
 
 
  
-#busy_to_free = []
-#busy_to_freeId = []
+busy_to_free = []
 @app.route('/_to_free_time', methods=['POST'])
 def to_free():
 	"""
 	set the selected busy time to free, busy_to_free is the list that contain the events been set as the free time from the busy time list.
 	"""
-	#global busy_to_free #pass this to choose as the free time to print out
-	#global busy_to_freeId
-	#global busy_to_free
 	busy_to_freeId = request.form.getlist('to_free')
 	filtered_event = flask.session["filtered_event"]
-	busy_to_free = []
 	
 	for eve_id in busy_to_freeId:
 		for eve in filtered_event:
@@ -462,7 +468,8 @@ def list_events(service,calendar):
 			      { "id": id,
 				"start": start,
 				"end": end,
-				"summary": summary
+				"summary": summary,
+				"calendarId":calendar
 				})
 	return result
 	

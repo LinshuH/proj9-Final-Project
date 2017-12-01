@@ -66,8 +66,9 @@ def combine_busy_free():
 	
 	#These events used to be the busy, changing the title to infor the users that this events can be free.
 	for eve in busy_to_free:
-		eve["summary"] += "--( Can be free )"
-		busy_free_combine.append(eve)
+		if ("--( Can be free )" not in eve["summary"]):
+			eve["summary"] += "--( Can be free )"
+			busy_free_combine.append(eve)
 	
 	for eve in free_times:
 		busy_free_combine.append(eve)
