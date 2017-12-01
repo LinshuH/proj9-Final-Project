@@ -60,6 +60,7 @@ def index():
   app.logger.debug("Entering index")
   if 'begin_date' not in flask.session:
     init_session_values()
+  flask.g.link_external = flask.url_for("index", _external=True)
   return render_template('index.html')
 
 @app.route("/choose")
@@ -476,6 +477,8 @@ def list_events(service,calendar):
 	# ,orderBy="startTime", singleEvents=True
 	result = [ ]
 	for eve in event_list:
+		logging.info("------This is event_list in list_events-----")
+		logging.info(event_list)
 		if "transparency" in eve:
 			continue
 		else:
