@@ -320,6 +320,17 @@ def to_free():
 	flask.session['busy_to_freeId'] = busy_to_freeId
 
 	return flask.redirect(flask.url_for("choose"))
+
+@app.route('/_send_to_database', methods=['POST'])
+def to_database():
+	"""
+	This function send the free meeting time to database as long as the user confirm.
+	"""
+	free_time = flask.session['free_time']
+	logging.info("------------This is to_Database function's free_times")
+	logging.info(free_time)
+
+
 	
 	
 	

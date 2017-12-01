@@ -130,15 +130,10 @@
 </form>
 {% endif %}
 
+
 {% if g.tofree is defined  %}
 <h4>Events should not block calendar: </h4>
   <div class="row">
-
- <!-- {% if g.tofree|length == 0 %}
-  		<li>{{ None }}</li>
-  {% endif %}
--->
-
   {% for eve in g.tofree %}
        <div class="col-md-4">
         <!--Next step: Find how to print the class name on the page. -->
@@ -153,12 +148,11 @@
 <br>
 
 
-<h4>Whole Summary: </h4>
-{% if g.whole is defined  %}
+{% if g.free is defined  %}
+<h4>This is your free_time: </h4>
+<form action="/_send_to_database" method="post">
   <div class="row">
-
-
-  {% for eve in g.whole %}
+  {% for eve in g.free %}
        <div class="col-md-4">
         <!--Next step: Find how to print the class name on the page. -->
        <h6>{{ eve.weekday }}<h6>
@@ -168,10 +162,12 @@
        </div>
   {% endfor %}
   </div>
+  <input type="submit" value="Send free time to database"/>
+ </form>
 {% endif %} 
-</script>
 
 
+<input type="submit" value="Get Group Free time" />
 
   </div>  <!-- container (for bootstrap) -->
   </body> </html>
