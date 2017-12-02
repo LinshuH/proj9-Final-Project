@@ -328,6 +328,7 @@ def to_free():
 
 	return flask.redirect(flask.url_for("choose"))
 
+
 @app.route('/_send_to_database', methods=['POST'])
 def to_database():
 	"""
@@ -337,10 +338,20 @@ def to_database():
 	logging.info("-------#########This is to_Database function's free_times")
 	logging.info(free_time)
 	database.create_memo(free_time)
+
 	return flask.redirect(flask.url_for("choose"))
 
 
+@app.route('/_group_free_time', methods=['POST'])
+def group_free():
+	"""
+	This function connect to the database.py file, get the .
+	"""
+	group_free = database.group_freeTime()
+	logging.info("---------This is group_free database flask_main -----#####")
+	flask.g.group = group_free
 	
+	return flask.redirect(flask.url_for("choose"))
 	
 	
 
@@ -477,8 +488,8 @@ def list_events(service,calendar):
 	# ,orderBy="startTime", singleEvents=True
 	result = [ ]
 	for eve in event_list:
-		logging.info("------This is event_list in list_events-----")
-		logging.info(event_list)
+		#logging.info("------This is event_list in list_events-----")
+		#logging.info(event_list)
 		if "transparency" in eve:
 			continue
 		else:
