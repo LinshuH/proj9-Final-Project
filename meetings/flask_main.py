@@ -60,7 +60,6 @@ def index():
   app.logger.debug("Entering index")
   if 'begin_date' not in flask.session:
     init_session_values()
-  flask.g.link_external = flask.url_for("index", _external=True)
   return render_template('index.html')
 
 @app.route("/choose")
@@ -75,7 +74,10 @@ def choose():
     if not credentials:
       app.logger.debug("Redirecting to authorization")
       return flask.redirect(flask.url_for('oauth2callback'))
-
+    
+    # Get the external link
+    flask.g.link_external = flask.url_for("index", _external=True)
+    # Step 1 Select calendar
     gcal_service = get_gcal_service(credentials)
     app.logger.debug("Returned from get_gcal_service")
     #This is the things that I return to the html
@@ -86,7 +88,9 @@ def choose():
     
     logging.info("------------#####This is flask.session-------")
     logging.info(flask.session)
-    # select the calendar, and based ont the date and time and calender to filter the events
+
+    # Step 2
+    # Based on the selected calendar, date and time to filt the events
     if ('cal_ids' in flask.session):
     	cal_ids = flask.session['cal_ids']
     	logging.info("------------Choose Get cal_ids: ---------")
@@ -100,10 +104,10 @@ def choose():
     	#sort the events based on th/choosee start time.
     	events.sort(key=lambda e: e['start'])
     	
-    	#The event is finish the calendar fielt at here
-		#The event been selected by the date and time:
-		#Get the date and time
-		
+    	
+    	#The event is finish the calendar filt at here
+			#The event been selected by the date and time:
+			#Get the date and time
     	begin_datetime = flask.session['begin_datetime']
     	end_datetime = flask.session['end_datetime']
     	
@@ -114,7 +118,7 @@ def choose():
     	flask.g.events = filtered_event
     	logging.info("--------------This is the g.events")
     	logging.info(flask.g.events)
-    		
+
     	#Section that transfer the busy time to free time by user selection
     	#busy_to_free is a flask session array created by the function to_free()
     if ("busy_to_free" in flask.session):
@@ -219,8 +223,7 @@ def oauth2callback():
   step, the second time we'll skip the first step and do the second,
   and so on.
   """
-  app.logger.debug("Entering oauth2callback")
-  #if (isMain) 
+  app.logger.debug("Entering oauth2callback") 
   flow =  client.flow_from_clientsecrets(
       CLIENT_SECRET_FILE, #client_secret_json file
       scope= SCOPES,
@@ -297,15 +300,15 @@ def setrange(): #get the input date
 
 
 @app.route('/_select_calendar', methods=['POST'])
-def select_cal():
+def select_cal_get_events():
     """
     get the id of the calendars that user choose from checkbox
-    """
+    """    
+    # Get the selected calendar ids
     cal_ids = request.form.getlist('summary')
     flask.session['cal_ids'] = cal_ids
-    logging.info("----------get the flask.session['cal_ids']-----")
-    logging.info(flask.session['cal_ids'])
     return flask.redirect(flask.url_for("choose"))
+    #return render_template('index.html')
 
 
  
@@ -335,9 +338,14 @@ def to_database():
 	This function send the free meeting time to database as long as the user confirm.
 	"""
 	free_time = flask.session['free_time']
-	logging.info("-------#########This is to_Database function's free_times")
-	logging.info(free_time)
+	#logging.info("-------#########This is to_Database function's free_times")
+	#logging.info(free_time)
+	#for free in free_time:
 	database.create_memo(free_time)
+	#logging.info("-------#########This is to_Database function's free_times AFTER")
+	#logging.info(free_time)
+	
+	#After every time in free_time was added to the database, they are automatically add an "_id" key in free_time.
 
 	return flask.redirect(flask.url_for("choose"))
 
@@ -349,7 +357,10 @@ def group_free():
 	"""
 	group_free = database.group_freeTime()
 	logging.info("---------This is group_free database flask_main -----#####")
+	logging.info(group_free)
 	flask.g.group = group_free
+	logging.info("---------This is group_free database flask.g.group -----#####")
+	logging.info(flask.g.group)
 	
 	return flask.redirect(flask.url_for("choose"))
 	

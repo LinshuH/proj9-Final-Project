@@ -21,7 +21,6 @@ def combine_busy_free():
 	logging.info("Get the filtered_event")
 	logging.info(filtered_event)
 	
-
 	begin_datetime = arrow.get(flask.session['begin_datetime'])
 	
 	#logging.info("Get the begin_datetime")
@@ -38,6 +37,7 @@ def combine_busy_free():
 	free_times = calculate_free(ini_free,merge_events)
 		
 	#The merge_events is used for combine the overlapping events, for the view of the user, still display the original events
+	# busy_free_combine generate the data for the g.whole, free_combine contain both free time from calculation and busy_to_free event.
 	for eve in filtered_event:
 		busy_free_combine.append(eve)
 	
@@ -139,13 +139,17 @@ def calculate_free(free_time,busy_events):
 				
 		temp_start = free_start
 		temp_end = free_end
-
+		
+		oneday = False
 		for eve in busy_events:
 			eve_start = arrow.get(eve['start'])
 			eve_end = arrow.get(eve['end'])
 			
+			#one day event
+			if (eve_start<free_start and eve_end>free_end):
+				oneday = True 
 			#part overlap at begining
-			if (eve_start<free_start<eve_end):
+			elif (eve_start<=free_start<eve_end):
 				temp_start = eve_end
 				#logging.info("----------This is temp_start in first if: ")
 				#logging.info(temp_start)
@@ -157,39 +161,46 @@ def calculate_free(free_time,busy_events):
 				  "start": temp_start.isoformat(),
 				  "end": temp_end.isoformat(),
 				  "weekday": arrow.get(temp_start).format('dddd')
+				  
 				 })
 				temp_start = eve_end
 				temp_end = free_end
 			#part overlap at the end
 			elif (eve_start<free_end<eve_end):
 				temp_end = eve_start
-				
-		new_free.append(
-			{ "summary": "free time",
-			  "start": temp_start.isoformat(),
-			  "end": temp_end.isoformat(),
-			  "weekday": arrow.get(temp_start).format('dddd')
-			 })
+		
+		if (oneday == False):
+			#for the case that does not overlap with any busy time		
+			new_free.append(
+				{ "summary": "free time",
+					"start": temp_start.isoformat(),
+					"end": temp_end.isoformat(),
+					"weekday": arrow.get(temp_start).format('dddd')
+				 })
 	
 	#These events used to be the busy, changing the title to infor the users that this events can be free. Add them to the new_free time
 	busy_to_free = flask.session['busy_to_free']
 	logging.info("--------Get the busy_to_free in available_Time------")
 	logging.info(busy_to_free)
 	
+	# extra addone, probably do not need that
+	#add event id(for check) and status(for search in database) to free event
 	n = 0
 	for eve in new_free:
 		eve['id'] = n
+		eve['status'] = "free"
 		n += 1
 	
 	for eve in busy_to_free:
 		if ("--( Can be free )" not in eve["summary"]):
-			eve["summary"] += "--( Can be free )"
+			eve["summary"] += "--( Can be free )"	
 		if (eve not in new_free):
+			eve['status'] = "free"
 			new_free.append(eve)
+			
 			 
 	new_free.sort(key=lambda e: e['start'])
 	#add the id to each free event
-	
 	
 	flask.g.free = new_free
 	logging.info("-----Get the flask.g.free at here--------")

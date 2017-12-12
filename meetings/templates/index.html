@@ -126,7 +126,7 @@
        </div>
   {% endfor %}
   </div>
-<input type="submit" value="Set these events to free" />
+<input type="submit" value="Get Free Time / Set these events to free" />
 </form>
 {% endif %}
 
@@ -168,11 +168,9 @@
 
 
 <form action="/_group_free_time" method="post">
-<h4>This is the group free time: </h4>
-  <input type="submit" value="Get Group Free time" />
-</form>
-
+<input type="submit" value="Get Group Free time" />
 {% if g.group is defined  %}
+<h4>This is the group free time: </h4>
   <div class="row">
   {% for eve in g.group %}
        <div class="col-md-4">
@@ -185,11 +183,12 @@
   {% endfor %}
   </div>
 {% endif %} 
+</form>
 
 
 
-<h4>This is the external link: </h4>
- <p>External link: <a  href="{{g.link_external}}">{{g.link_external}}</a></p>
+ <h4>External link for the other users: </h4>
+ <a  href="{{g.link_external}}">{{g.link_external}}</a>
 
 
 
