@@ -132,7 +132,11 @@ def choose():
     			cal_busy_to_free.append(eve)
     	flask.session['busy_to_free'] = cal_busy_to_free
     	flask.g.tofree = cal_busy_to_free
+    if ("group_free" in flask.session):
+    	group_free = flask.session["group_free"] 
+    	flask.g.group = group_free
     
+    """
     if ('filtered_event' and 'busy_to_free' in flask.session):
     	#connect to the available_time.py
     	whole_events = available_time.combine_busy_free()
@@ -144,7 +148,7 @@ def choose():
     	logging.info("-------------3, This is 'free_time'------")
     	logging.info(flask.session['free_time'])
     	flask.g.whole = whole_events
-
+		"""
     return render_template('index.html')
     ##Q: I used want to combine _choose_cal function with /choose, but server does not allow to do so. Why? 
     ##   Why the event cannot directly call the choose?
@@ -358,9 +362,10 @@ def group_free():
 	group_free = database.group_freeTime()
 	logging.info("---------This is group_free database flask_main -----#####")
 	logging.info(group_free)
-	flask.g.group = group_free
-	logging.info("---------This is group_free database flask.g.group -----#####")
-	logging.info(flask.g.group)
+	flask.session["group_free"] = group_free
+	#flask.g.group = group_free
+	#logging.info("---------This is group_free database flask.g.group -----#####")
+	#logging.info(flask.g.group)
 	
 	return flask.redirect(flask.url_for("choose"))
 	

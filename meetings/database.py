@@ -79,19 +79,15 @@ def create_memo(events):
 	This function get a group of free time, store the free time for each user individually and assign each user an unique id.
 	Meanwhile, under the else statement, program check whether the database already contain the same record, if yes, them not add the extra information.
 	"""
-	#logging.info("---------This is free_time get from flask_main------")
-	#logging.info(events)
-	
-
 	# get free time in database
 	temp_database_free = collection.find()
 	database_free = []
 	for free in temp_database_free:
 		database_free.append(free)
-	logging.info("-----------database_freetime in database.memo-----")
-	logging.info(database_free)
-	logging.info ("-----length of database_free")
-	logging.info (len(database_free))
+	#logging.info("-----------database_freetime in database.memo-----")
+	#logging.info(database_free)
+	#logging.info ("-----length of database_free")
+	#logging.info (len(database_free))
 	
 	if len(database_free) == 0:
 		userid = uuid.uuid4()
@@ -104,9 +100,7 @@ def create_memo(events):
 			userid = uuid.uuid4()
 			collection.insert({ 'user': userid, 'record': events })
 			
-	
-	
-
+			
 def group_freeTime():
 	"""
 	Connect with the database first and get all the collection inside,
@@ -114,26 +108,34 @@ def group_freeTime():
 	After merge all the free time, use them to replace the current database collection.
 	Since the database_Free is sorted by the start time, for the case that second free time is larger than the first free time, this time the case is handleing by the second case when it is doing the calculation.
 	"""
-	# get free time in database
-	temp_database_free = collection.find()
-	database_free = []
-	for free in temp_database_free:
-		#del free['_id']
-		database_free.append(free)
-	database_free.sort(key=lambda e: e['start'])
-	logging.info("-------database_free in database.py---------")
-	logging.info(database_free)
+	# get the list of free time in database
+	temp_ini_group_free = collection.find()
+	ini_group_free = []
+	for free in temp_ini_group_free:
+		ini_group_free.append(free['record'])
+	logging.info("-----------ini_group_free in database.memo-----")
+	logging.info(ini_group_free)
+	logging.info ("----------This is userlen(ini_group_free)1")
+	logging.info(len(ini_group_free))
+	for i in range(len(ini_group_free)-1):
+		user1 = ini_group_free[i]
+		user2 = ini_group_free[i+1]
+		logging.info ("----------This is user1")
+		logging.info(user1)
+		logging.info ("-----------This is user2")
+		logging.info(user2)
 	
+
 	# start to find the overlap time
 	overlap_free = []
-	for free1 in database_free:
+	for free1 in user1:
 		free1_start = arrow.get(free1['start'])
 		free1_end = arrow.get(free1['end'])
 		
 		#temp_start = free1_start
 		#temp_end = free1_end
 		
-		for free2 in database_free:
+		for free2 in user2:
 			free2_start = arrow.get(free2['start'])
 			free2_end = arrow.get(free2['end'])
 			
@@ -164,52 +166,9 @@ def group_freeTime():
 							"end": temp_end.isoformat(),
 							"weekday": arrow.get(free2_start).format('dddd')
 						})	
-			
-			# remove the repeated overlap time
-			new_overlap_free = []
-			for eve in overlap_free:
-				if eve not in new_overlap_free:
-					new_overlap_free.append(eve)
-			"""
-			#if (free1_start <= free2_start < free1_end):
-				#if (free1_start == free2_start and free1_end
-				#the free2 is totally overlap with(inside) free1
-			if (free1_start < free2_start and free1_end >= free2_end):
-				temp_start = free2_start
-				temp_end = free2_end
-				
-			# second free is start later but also end later than first free.	
-			elif (free1_start < free2_start and free1_end < free2_end):
-				temp_start = free2_start
-				temp_end = free1_end
-				
-			elif (free1_start >= free2_start and free1_end >= free2_end):
-				temp_start = free1_start
-				temp_end = free2_end
-					
-			elif (free1_start >= free2_start and free1_end < free2_end):
-				temp_start = free1_start
-				temp_end = free1_end
-				
 
-			# avoid the repetetion.	
-			for eve in overlap_free:
-				if (eve["start"] != temp_start and eve["end"] != temp_end):
-					overlap_free.append(
-						{ "summary": "free time",
-							"start": temp_start.isoformat(),
-							"end": temp_end.isoformat(),
-							"weekday": arrow.get(free2_start).format('dddd')
-						})
-			
-			overlap_free.append(
-						{ "summary": "free time",
-							"start": temp_start.isoformat(),
-							"end": temp_end.isoformat(),
-							"weekday": arrow.get(free2_start).format('dddd')
-						})
-			"""
-	logging.info("-------new_overlap_free in database.py---------")
-	logging.info(new_overlap_free)
+	overlap_free.sort(key=lambda e: e['start'])
+	logging.info("-------overlap_free in database.py---------")
+	logging.info(overlap_free)
 	
-	return new_overlap_free
+	return overlap_free
